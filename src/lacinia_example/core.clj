@@ -3,6 +3,7 @@
             [com.walmartlabs.lacinia.schema :as s]
             [com.walmartlabs.lacinia.util :refer [attach-resolvers attach-scalar-transformers]]
             [cheshire.core :as j]
+            [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [ring.adapter.jetty :refer [run-jetty]]))
 
 (def example '{:scalars {:DateTime
@@ -30,8 +31,11 @@
 (defn q [query]
   (execute schema query {} {}))
 
-(q "{ product(id:1) { name id createdAt}}")
+(defn handler [{:keys [body]}]
+  {:status 200 :headers {} :body (q (:query body))})
 
-(q "{ product(id:1000) { id }}")
-
-(q "{__schema { queryType { name } } }")
+(defn -main [& args]
+  (run-jetty (-> handler
+                 (wrap-json-body {:keywords? true :bigdecimals? true})
+                 wrap-json-response)
+             {:port 8080}))
