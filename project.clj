@@ -7,5 +7,6 @@
                  [com.walmartlabs/lacinia "0.28.0"]
                  [ring "1.7.0-RC1"]
                  [ring/ring-json "0.4.0"]
-                 [cheshire "5.7.1"]]
+                 [cheshire "5.7.1"]
+                 [threatgrid/ring-graphql-ui "0.1.1"]]
   :main lacinia-example.core)

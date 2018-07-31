@@ -4,7 +4,8 @@
             [com.walmartlabs.lacinia.util :refer [attach-resolvers attach-scalar-transformers]]
             [cheshire.core :as j]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
-            [ring.adapter.jetty :refer [run-jetty]]))
+            [ring.adapter.jetty :refer [run-jetty]]
+            [ring-graphql-ui.core :refer [wrap-graphiql]]))
 
 (def example '{:scalars {:DateTime
                          {:parse :date-transformers
@@ -28,14 +29,13 @@
       (attach-scalar-transformers {:date-transformers (s/as-conformer #(re-matches #"[0-9]{14}" %))})
       s/compile))
 
-(defn q [query]
-  (execute schema query {} {}))
-
-(defn handler [{:keys [body]}]
-  {:status 200 :headers {} :body (q (:query body))})
+(defn handler [{{:keys [query variables operationName]} :body}]
+  {:status 200 :headers {} :body (execute schema query variables nil)})
 
 (defn -main [& args]
   (run-jetty (-> handler
                  (wrap-json-body {:keywords? true :bigdecimals? true})
+                 (wrap-graphiql {:path "/graphiql"
+                                 :endpoint "/graphql"})
                  wrap-json-response)
              {:port 8080}))
