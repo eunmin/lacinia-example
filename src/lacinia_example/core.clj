@@ -30,12 +30,21 @@
       s/compile))
 
 (defn handler [{{:keys [query variables operationName]} :body}]
-  {:status 200 :headers {} :body (execute schema query variables nil)})
+  (println operationName)
+  (let [result (execute schema query variables nil {:operation-name operationName})]
+    (println result)
+    {:status 200 :headers {} :body result}))
 
-(defn -main [& args]
-  (run-jetty (-> handler
+(defn start [options]
+  (run-jetty (-> #'handler
                  (wrap-json-body {:keywords? true :bigdecimals? true})
                  (wrap-graphiql {:path "/graphiql"
                                  :endpoint "/graphql"})
                  wrap-json-response)
-             {:port 8080}))
+             options))
+
+(defn stop [server]
+  (.stop server))
+
+(defn -main [& args]
+  (start {:port 8080}))

@@ -9,4 +9,5 @@
                  [ring/ring-json "0.4.0"]
                  [cheshire "5.7.1"]
                  [threatgrid/ring-graphql-ui "0.1.1"]]
-  :main lacinia-example.core)
+  :main lacinia-example.core
+  :repl-options {:init-ns user})
