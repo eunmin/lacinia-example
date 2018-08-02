@@ -5,7 +5,8 @@
             [cheshire.core :as j]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [ring.adapter.jetty :refer [run-jetty]]
-            [ring-graphql-ui.core :refer [wrap-graphiql]]))
+            [ring-graphql-ui.core :refer [wrap-graphiql]]
+            [com.walmartlabs.lacinia.parser.schema :refer [parse-schema]]))
 
 (def example '{:scalars {:DateTime
                          {:parse :date-transformers
@@ -20,6 +21,26 @@
                                                :default-value 1}}
                                    :resolve :resolve-product}}})
 
+(def example-sdl "
+  {
+    scalar DateTime
+
+    type Product {
+      id: Int
+      name: String
+      createdAt: DateTime
+    }
+
+    type Query {
+      product(id: Int): Product
+    }
+
+    schema {
+      query: Query
+    }
+  }
+  ")
+
 (defn find-product [context args _value]
   {:id (:id args) :name "test" :createdAt "20180728010100"})
 
@@ -29,10 +50,15 @@
       (attach-scalar-transformers {:date-transformers (s/as-conformer #(re-matches #"[0-9]{14}" %))})
       s/compile))
 
+(def schema
+  (s/compile
+   (parse-schema example-sdl
+                 {:resolvers {:Query {:product find-product}}
+                  :scalars {:DateTime {:parse (s/as-conformer #(re-matches #"[0-9]{14}" %))
+                                       :serialize (s/as-conformer #(re-matches #"[0-9]{14}" %))}}})))
+
 (defn handler [{{:keys [query variables operationName]} :body}]
-  (println operationName)
   (let [result (execute schema query variables nil {:operation-name operationName})]
-    (println result)
     {:status 200 :headers {} :body result}))
 
 (defn start [options]
